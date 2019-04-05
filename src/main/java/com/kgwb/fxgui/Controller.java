@@ -4,6 +4,7 @@ import com.kgwb.model.MiniLinkDeviceConfigWrapper;
 import com.sun.javafx.scene.control.skin.TableViewSkin;
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -29,6 +30,8 @@ import java.util.stream.Stream;
 
 public class Controller implements Initializable {
     @FXML
+    private TableView tableView;
+    @FXML
     private ParallelProgressBar progress;
     @FXML
     private Label rightStatusLabel;
@@ -47,81 +50,105 @@ public class Controller implements Initializable {
     @FXML
     private TextField urlTextEntry;
     @FXML
-    private Button btnBrowse;
+    private Button btnChangePathAndRun;
     @FXML
-    private Button btnProcessFiles;
+    private Button btnRun;
 
     ArrayList<String> myTexts = new ArrayList<String>();
 
 
     public void initialize(URL location, ResourceBundle resources) {
-//        for (int i = 1; i < 10000; i++) {
-//            myTexts.add("At " + System.nanoTime() + " ns");
-//        }
+        urlTextEntry.setPromptText("Click [Change ...] to select folder of Mini-Link QoS *.cfg files.");
 
-        TableView<ObservableList<StringProperty>> table = new TableView();
-
-        urlTextEntry.setPromptText("Click Browse to choose MGISP printout folder");
-        String folderPath = "c:\\temp\\ml_cfg";
-        urlTextEntry.setText(folderPath);
-        urlTextEntry.setDisable(true);
-
-        urlTextEntry.setOnAction(event -> this.populateTable(table, urlTextEntry.getText()));
-
-        btnProcessFiles.setOnAction(e -> {
+        btnChangePathAndRun.setOnAction(e -> {
             if (progress.isRunning()) return;
 
             Stage primaryStage = (Stage) ((Node) e.getSource()).getScene().getWindow();
-            DirectoryChooser directoryChooser = new DirectoryChooser();
-            directoryChooser.setInitialDirectory(new File(folderPath));
-            File selectedDirectory = directoryChooser.showDialog(primaryStage);
-            if (selectedDirectory == null) return;
-            String absolutePath = selectedDirectory.getAbsolutePath();
+            String browsedPath = browseFolder(primaryStage);
+            if (browsedPath == null) return;
 
-            urlTextEntry.setText(absolutePath);
+            urlTextEntry.setText(browsedPath);
+            startProcess();
+        });
 
-            btnProcessFiles.setDisable(true);
+
+        btnRun.setOnAction(e -> {
+            if (progress.isRunning()) return;
+
+            String currentFolderPath = urlTextEntry.getText();
+
+            File folder = new File(currentFolderPath);
+            if (!folder.exists() || !folder.isDirectory()) {
+                Stage primaryStage = (Stage) ((Node) e.getSource()).getScene().getWindow();
+                String browsedPath = browseFolder(primaryStage);
+                if (browsedPath == null) return;
+                urlTextEntry.setText(browsedPath);
+            }
+
+            btnRun.setDisable(true);
             progress.setVisible(true);
             rightStatusLabel.setText("...");
 
-            File[] files = selectedDirectory.listFiles();
-
-            progress.start(files.length);
-
-            new Thread(() -> {
-                long ms = System.currentTimeMillis();
-                Stream.of(files).parallel().forEach(file -> {
-                    progress.add(1);
-                    try {
-                        //TODO:tasks here
-                        //Thread.sleep(1);
-                        process(file);
-                    } catch (Exception ignored) {
-                    }
-                });
-                Platform.runLater(() -> {
-                    rightStatusLabel.setText("" + (System.currentTimeMillis() - ms) + " ms");
-                    btnProcessFiles.setDisable(false);
-                    progress.setVisible(false);
-                });
-            }).start();
+            startProcess();
         });
 
+    }
+
+    private String browseFolder(Stage primaryStage) {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+//        directoryChooser.setInitialDirectory(new File(initDir));
+        File selectedDirectory = directoryChooser.showDialog(primaryStage);
+        if (selectedDirectory == null) return null;
+
+        return selectedDirectory.getAbsolutePath();
+    }
+
+    private ObservableList<MiniLinkDeviceConfigWrapper> mlConfigData = FXCollections.observableArrayList();
+
+    private void startProcess() {
+        File folder = new File(urlTextEntry.getText());
+        if (!(folder.exists() || folder.isDirectory())) return;
+
+        final File[] files = folder.listFiles();
+        progress.start(files.length);
+
+        new Thread(() -> {
+            long ms = System.currentTimeMillis();
+            Stream.of(files).parallel().forEach(file -> {
+                progress.add(1);
+                if (!file.isDirectory()) {
+                    try {
+                        MiniLinkDeviceConfigWrapper configWrapper = process(file);
+                        mlConfigData.add(configWrapper);
+                    } catch (Exception ignored) {
+                        ignored.printStackTrace();
+                    }
+                }
+            });
+            Platform.runLater(() -> {
+                rightStatusLabel.setText("" + (System.currentTimeMillis() - ms) + " ms");
+                tableView.setItems(mlConfigData);
+                btnRun.setDisable(false);
+                progress.setVisible(false);
+
+            });
+        }).start();
     }
 
     private MiniLinkDeviceConfigWrapper process(File file) throws IOException {
         MiniLinkDeviceConfigWrapper configWrapper;
 
-        String ml_su_activerelease, ml_brg_nt_pcp_selection, ml_brg_prio_m_type, ml_brg_sdlr_profile, ml_brg_qu_set_profile, ml_brg_sdlr_profile_name, ml_brg_qu_set_profile_name, ml_su_release;
+        String fileName, ml_su_activerelease, ml_brg_nt_pcp_selection, ml_brg_prio_m_type, ml_brg_sdlr_profile, ml_brg_qu_set_profile, ml_brg_sdlr_profile_name, ml_brg_qu_set_profile_name, ml_su_release;
         ml_su_activerelease = ml_brg_nt_pcp_selection = ml_brg_prio_m_type = ml_brg_sdlr_profile = ml_brg_qu_set_profile = ml_brg_sdlr_profile_name = ml_brg_qu_set_profile_name = ml_su_release = "";
 
+        fileName = file.getName();
         boolean ml_brg_aging_enable, flag_brg_aging, flag_eth_prf;
         ml_brg_aging_enable = flag_brg_aging = flag_eth_prf = false;
 
-        List<String> ml_brg_prio_m_map = new ArrayList<>();
-        List<String> ml_brg_aging = new ArrayList<>();
-        List<String> ml_tc_sdlr_typeN_weight = new ArrayList<>();
-        List<String> ml_tc_qu = new ArrayList<>();
+        List<String> ml_list_brg_prio_m_map = new ArrayList<>();
+        List<String> ml_list_brg_aging = new ArrayList<>();
+        List<String> ml_list_tc_sdlr_typeN_weight = new ArrayList<>();
+        List<String> ml_list_tc_qu = new ArrayList<>();
 
         try (LineIterator it = FileUtils.lineIterator(file, "UTF-8")) {
             while (it.hasNext()) {
@@ -158,18 +185,20 @@ public class Controller implements Initializable {
                 }
 
                 if (line.startsWith("bridge priority-mapping map")) {
-                    ml_brg_prio_m_map.add(line.replace("bridge priority-mapping map ", ""));
+                    ml_list_brg_prio_m_map.add(line.replace("bridge priority-mapping map ", ""));
                     continue;
                 }
-//
-//                if (line.startsWith("bridge scheduler-profile ")) {
-//                    ml_brg_sdlr_profile = line.replace("bridge scheduler-profile ", "");
-//                    continue;
-//                }
-//                if (line.startsWith("bridge queue-set-profile ")) {
-//                    ml_brg_qu_set_profile = line.replace("bridge queue-set-profile  ", "");
-//                    continue;
-//                }
+
+                /*
+                if (line.startsWith("bridge scheduler-profile ")) {
+                    ml_brg_sdlr_profile = line.replace("bridge scheduler-profile ", "");
+                    continue;
+                }
+                if (line.startsWith("bridge queue-set-profile ")) {
+                    ml_brg_qu_set_profile = line.replace("bridge queue-set-profile  ", "");
+                    continue;
+                }
+                */
 
                 if (!flag_brg_aging) {
                     if (line.startsWith("bridge aging ")) {
@@ -178,13 +207,13 @@ public class Controller implements Initializable {
                         continue;
                     }
                 } else if (line.startsWith("bridge aging ")) {
-                    ml_brg_aging.add(line.replace("bridge aging ", ""));
+                    ml_list_brg_aging.add(line.replace("bridge aging ", ""));
                     continue;
                 }
 
-                //TODO: Enhance by replacing RegEx
                 if (line.contentEquals("ethernet-profiles")) {
                     flag_eth_prf = true;
+                    System.out.println();
                     continue;
                 }
 
@@ -202,7 +231,7 @@ public class Controller implements Initializable {
                         } catch (PatternSyntaxException ignore) {
                         }
                     } else if (line.startsWith("  tc-scheduler-type-and-weight ")) {
-                        ml_tc_sdlr_typeN_weight.add(line.replace("  tc-scheduler-type-and-weight ", ""));
+                        ml_list_tc_sdlr_typeN_weight.add(line.replace("  tc-scheduler-type-and-weight ", ""));
                     } else if (line.startsWith(" queue-set-profile ")) {
                         try {
                             Pattern regex = Pattern.compile(" queue-set-profile (?<profile>\\d+) name \\\"(?<name>.*?)\"");
@@ -214,19 +243,14 @@ public class Controller implements Initializable {
                         } catch (PatternSyntaxException ignore) {
                         }
                     } else if (line.startsWith("   tc-queue ")) {
-                        ml_tc_qu.add(line.replace("   tc-queue ", ""));
+                        ml_list_tc_qu.add(line.replace("   tc-queue ", ""));
                     } else continue;
                 }
             }
         }
 
-        //configWrapper = new MiniLinkDeviceConfigWrapper( file, ml_su_release, ml_brg_prio_m_type, ml_brg_nt_pcp_selection, ml_brg_prio_m_map.toArray(), ml_brg_sdlr_profile, ml_brg_qu_set_profile, ml_brg_aging_enable, ml_brg_aging.toArray(), ml_brg_sdlr_profile_name, ml_tc_sdlr_typeN_weight.toArray(), ml_brg_qu_set_profile_name, ml_tc_qu.toArray());
-
-        return new MiniLinkDeviceConfigWrapper();
-    }
-
-    private void populateTable(final TableView<ObservableList<StringProperty>> table, String urlSpec) {
-
+        return new MiniLinkDeviceConfigWrapper(fileName, ml_su_release, ml_brg_prio_m_type, ml_brg_nt_pcp_selection, ml_list_brg_prio_m_map.toArray(new String[0]), ml_brg_sdlr_profile, ml_brg_qu_set_profile,
+                ml_brg_aging_enable, ml_list_brg_aging.toArray(new String[0]), ml_brg_sdlr_profile_name, ml_list_tc_sdlr_typeN_weight.toArray(new String[0]), ml_brg_qu_set_profile_name, ml_list_tc_qu.toArray(new String[0]));
     }
 }
 

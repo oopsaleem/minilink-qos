@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.kgwb.fxgui.ParallelProgressBar?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.SeparatorMenuItem?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
@@ -17,19 +15,14 @@
 <?import javafx.scene.paint.Color?>
 <?import javafx.scene.text.Font?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.ProgressBar?>
-<?import com.kgwb.fxgui.ParallelProgressBar?>
-
 <VBox prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.kgwb.fxgui.Controller">
   <children>
     <HBox id="HBox" alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
       <children>
         <Label maxHeight="1.8" maxWidth="-1.0" text="Source Path:" HBox.hgrow="ALWAYS" />
-        <TextField maxHeight="1.8" maxWidth="-1.0" text="c:\tools\printout\allip" HBox.hgrow="ALWAYS" editable="false" fx:id="urlTextEntry" />
-        <Button maxHeight="1.8" maxWidth="-1.0" text="Browse" HBox.hgrow="ALWAYS" fx:id="btnBrowse" />
-        <Button maxHeight="1.8" maxWidth="-1.0" text="Run" HBox.hgrow="ALWAYS" fx:id="btnProcessFiles" />
+        <TextField fx:id="urlTextEntry" editable="false" maxHeight="1.8" maxWidth="-1.0" disable="false" text="c:\temp\ml_cfg" HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnChangePathAndRun" maxHeight="1.8" maxWidth="-1.0" text="Change ..." HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnRun" maxHeight="1.8" maxWidth="-1.0" text="Start" HBox.hgrow="ALWAYS" />
         <Pane prefHeight="-1.0" prefWidth="-1.0" HBox.hgrow="ALWAYS" />
         <Label maxWidth="-1.0" text="Right status" HBox.hgrow="NEVER" />
       </children>
@@ -37,34 +30,20 @@
         <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
       </padding>
     </HBox>
-    <ScrollPane prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
-        <AnchorPane>
+    <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+      <content>
+        <AnchorPane fx:id="contentAnchorPane" minHeight="-1.0" minWidth="-1.0" VBox.vgrow="ALWAYS">
           <children>
-            <Label alignment="CENTER" layoutX="14.0" layoutY="14.0" prefWidth="-1.0" style="&#10;" text="Master" textAlignment="LEFT" wrapText="false">
-              <font>
-                <Font size="18.0" fx:id="x1" />
-              </font>
-              <textFill>
-                <Color blue="0.624" green="0.624" red="0.624" fx:id="x2" />
-              </textFill>
-            </Label>
+            <TableView fx:id="tableView" maxHeight="-1.0" maxWidth="-1.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+              <columns>
+                <TableColumn fx:id="fileName" maxWidth="100" prefWidth="158.0" text="C1" />
+                <TableColumn fx:id="softwareVersion" minWidth="0.0" prefWidth="105.0" text="C2" />
+                <TableColumn fx:id="bridgePriorityMappingType" minWidth="0.0" prefWidth="105.0" text="C2" />
+              </columns>
+            </TableView>
           </children>
         </AnchorPane>
-        <ScrollPane prefHeight="-1.0" prefWidth="-1.0">
-          <content>
-            <AnchorPane fx:id="contentAnchorPane" minHeight="-1.0" minWidth="-1.0">
-              <children>
-                <TableView fx:id="personTable" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                  <columns>
-                    <TableColumn fx:id="nameCol" maxWidth="100" prefWidth="158.0" text="C1" />
-                    <TableColumn fx:id="surnameCol" minWidth="0.0" prefWidth="105.0" text="C2" />
-                    <TableColumn fx:id="emailCol" minWidth="0.0" prefWidth="105.0" text="C2" />
-                  </columns>
-                </TableView>
-              </children>
-            </AnchorPane>
-          </content>
-        </ScrollPane>
+      </content>
     </ScrollPane>
     <HBox id="HBox" alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
       <children>
@@ -77,8 +56,8 @@
           </textFill>
         </Label>
         <Pane prefHeight="-1.0" prefWidth="-1.0" HBox.hgrow="ALWAYS" />
-        <ParallelProgressBar progress="NaN" visible="false" HBox.hgrow="NEVER" fx:id="progress"/>
-        <Label font="$x3" maxWidth="-1.0" text="Right status" textFill="$x4" HBox.hgrow="NEVER" fx:id="rightStatusLabel" />
+        <ParallelProgressBar fx:id="progress" progress="NaN" visible="false" HBox.hgrow="NEVER" />
+        <Label fx:id="rightStatusLabel" font="$x3" maxWidth="-1.0" text="Right status" textFill="$x4" HBox.hgrow="NEVER" />
       </children>
       <padding>
         <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />

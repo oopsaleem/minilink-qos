@@ -1,5 +1,6 @@
 package com.kgwb.model;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 import java.util.ArrayList;
@@ -9,23 +10,36 @@ public class MiniLinkDeviceConfigWrapper {
 
     public MiniLinkDeviceConfigWrapper() { }
 
-//    public MiniLinkDeviceConfigWrapper(SimpleStringProperty fileName, SimpleStringProperty softwareVersion, SimpleStringProperty bridgePriorityMappingType, SimpleStringProperty bridgeNtPcpSelection, SimpleStringProperty bridgePriorityMappingMap, SimpleStringProperty bridgeSchedulerProfile, SimpleStringProperty bridgeQueueSetProfile, SimpleStringProperty bridgeAgingEnable, SimpleStringProperty bridgeAging, SimpleStringProperty schedulerProfileName, SimpleStringProperty tcSchedarTypeWeight, SimpleStringProperty queueSetProfileName, String[] tcQueue) {
-//        this.fileName = fileName;
-//        this.softwareVersion = softwareVersion;
-//        this.bridgePriorityMappingType = bridgePriorityMappingType;
-//        this.bridgeNtPcpSelection = bridgeNtPcpSelection;
-//        this.bridgePriorityMappingMap = bridgePriorityMappingMap;
-//        this.bridgeSchedulerProfile = bridgeSchedulerProfile;
-//        this.bridgeQueueSetProfile = bridgeQueueSetProfile;
-//        this.bridgeAgingEnable = bridgeAgingEnable;
-//        this.bridgeAging = bridgeAging;
-//        this.schedulerProfileName = schedulerProfileName;
-//        this.tcSchedarTypeWeight = tcSchedarTypeWeight;
-//        this.queueSetProfileName = queueSetProfileName;
-//        this.tcQueue = tcQueue;
-//    }
+    public MiniLinkDeviceConfigWrapper(String fileName,
+                                       String softwareVersion,
+                                       String bridgePriorityMappingType,
+                                       String bridgeNtPcpSelection,
+                                       String[] bridgePriorityMappingMap,
+                                       String bridgeSchedulerProfile,
+                                       String bridgeQueueSetProfile,
+                                       boolean bridgeAgingEnable,
+                                       String[] bridgeAging,
+                                       String schedulerProfileName,
+                                       String[] tcSchedarTypeWeight,
+                                       String queueSetProfileName,
+                                       String[] tcQueue) {
+        this.fileName = new SimpleStringProperty(fileName);
+        this.softwareVersion = new SimpleStringProperty(softwareVersion);
+        this.bridgePriorityMappingType = new SimpleStringProperty(bridgePriorityMappingType);
+        this.bridgeNtPcpSelection = new SimpleStringProperty(bridgeNtPcpSelection);
+        this.bridgePriorityMappingMap = new SimpleStringProperty(String.join(", ", bridgePriorityMappingMap));
+        this.bridgeSchedulerProfile = new SimpleStringProperty(bridgeSchedulerProfile);
+        this.bridgeQueueSetProfile = new SimpleStringProperty(bridgeQueueSetProfile);
+        this.bridgeAgingEnable = new SimpleBooleanProperty(bridgeAgingEnable);
+        this.bridgeAging = new SimpleStringProperty(String.join(", ", bridgeAging));
+        this.schedulerProfileName = new SimpleStringProperty(schedulerProfileName);
+        this.tcSchedarTypeWeight = new SimpleStringProperty(String.join(", ", tcSchedarTypeWeight));
+        this.queueSetProfileName = new SimpleStringProperty(queueSetProfileName);
+        this.tcQueue = new SimpleStringProperty(String.join(", ", tcQueue) );
+    }
 
     private SimpleStringProperty fileName = new SimpleStringProperty();
+
     public String getFileName() { return fileName.get(); }
     public SimpleStringProperty fileNameProperty() { return fileName; }
 
@@ -77,11 +91,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgeQueueSetProfile;
     }
 
-    private SimpleStringProperty bridgeAgingEnable = new SimpleStringProperty();
-    public String getBridgeAgingEnable() {
-        return bridgeAgingEnable.get();
-    }
-    public SimpleStringProperty bridgeAgingEnableProperty() {
+    private SimpleBooleanProperty bridgeAgingEnable = new SimpleBooleanProperty();
+    public boolean getBridgeAgingEnable() { return bridgeAgingEnable.get(); }
+    public SimpleBooleanProperty bridgeAgingEnableProperty() {
         return bridgeAgingEnable;
     }
 
@@ -115,15 +127,9 @@ public class MiniLinkDeviceConfigWrapper {
         return queueSetProfileName;
     }
 
-    private List<SimpleStringProperty> tcQueue = new ArrayList<>();
-    public String[] getTcQueue() { return transformerFrom(tcQueue); }
-    public List<SimpleStringProperty> tcQueueProperty() {
+    private SimpleStringProperty tcQueue = new SimpleStringProperty();
+    public String getTcQueue() { return tcQueue.get(); }
+    public SimpleStringProperty tcQueueProperty() {
         return tcQueue;
     }
-
-    private String[] transformerFrom(List<SimpleStringProperty> items) {
-        return null;
-    }
-
-
 }
