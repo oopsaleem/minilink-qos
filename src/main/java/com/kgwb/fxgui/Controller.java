@@ -3,9 +3,12 @@ package com.kgwb.fxgui;
 import com.kgwb.model.MiniLinkDeviceConfigWrapper;
 import com.sun.javafx.scene.control.skin.TableViewSkin;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -19,12 +22,11 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -35,6 +37,10 @@ public class Controller implements Initializable {
     private ParallelProgressBar progress;
     @FXML
     private Label rightStatusLabel;
+
+    private List<MiniLinkDeviceConfigWrapper> dataObjects;
+    private Map<Integer, String> columnMap;
+
 
     private static Method columnToFitMethod;
 
@@ -53,9 +59,6 @@ public class Controller implements Initializable {
     private Button btnChangePathAndRun;
     @FXML
     private Button btnRun;
-
-    ArrayList<String> myTexts = new ArrayList<String>();
-
 
     public void initialize(URL location, ResourceBundle resources) {
         urlTextEntry.setPromptText("Click [Change ...] to select folder of Mini-Link QoS *.cfg files.");
@@ -103,8 +106,6 @@ public class Controller implements Initializable {
         return selectedDirectory.getAbsolutePath();
     }
 
-    private ObservableList<MiniLinkDeviceConfigWrapper> mlConfigData = FXCollections.observableArrayList();
-
     private void startProcess() {
         File folder = new File(urlTextEntry.getText());
         if (!(folder.exists() || folder.isDirectory())) return;
@@ -112,6 +113,8 @@ public class Controller implements Initializable {
         final File[] files = folder.listFiles();
         progress.start(files.length);
 
+        dataObjects = new ArrayList<>();
+        dataObjects.clear();
         new Thread(() -> {
             long ms = System.currentTimeMillis();
             Stream.of(files).parallel().forEach(file -> {
@@ -119,7 +122,7 @@ public class Controller implements Initializable {
                 if (!file.isDirectory()) {
                     try {
                         MiniLinkDeviceConfigWrapper configWrapper = process(file);
-                        mlConfigData.add(configWrapper);
+                        dataObjects.add(configWrapper);
                     } catch (Exception ignored) {
                         ignored.printStackTrace();
                     }
@@ -127,7 +130,13 @@ public class Controller implements Initializable {
             });
             Platform.runLater(() -> {
                 rightStatusLabel.setText("" + (System.currentTimeMillis() - ms) + " ms");
-                tableView.setItems(mlConfigData);
+
+                ObservableList<StringProperty> data = FXCollections.observableArrayList();
+                dataObjects.forEach( m -> {
+                    data.add(new SimpleStringProperty(m.getFileName()));
+                });
+
+                tableView.setItems(data);
                 btnRun.setDisable(false);
                 progress.setVisible(false);
 
@@ -251,6 +260,93 @@ public class Controller implements Initializable {
 
         return new MiniLinkDeviceConfigWrapper(fileName, ml_su_release, ml_brg_prio_m_type, ml_brg_nt_pcp_selection, ml_list_brg_prio_m_map.toArray(new String[0]), ml_brg_sdlr_profile, ml_brg_qu_set_profile,
                 ml_brg_aging_enable, ml_list_brg_aging.toArray(new String[0]), ml_brg_sdlr_profile_name, ml_list_tc_sdlr_typeN_weight.toArray(new String[0]), ml_brg_qu_set_profile_name, ml_list_tc_qu.toArray(new String[0]));
+    }
+
+    private void populateTable(final TableView<ObservableList<StringProperty>> table, String urlSpec) {
+        table.getItems().clear();
+        table.getColumns().clear();
+        table.setPlaceholder(new Label("Loading..."));
+
+        if (this.dataObjects != null && this.dataObjects.size() > 0) {
+            Task<Void> task2 = new Task<Void>() {
+                protected Void call() throws Exception {
+                    columnMap = new TreeMap();
+                    Set<String> paramKeys = new HashSet();
+                    columnMap.put(0, "File");
+                    columnMap.put(1, "IMSI");
+                    columnMap.put(2, "M");
+                    columnMap.put(3, "NA");
+                    Iterator var2 = dataObjects.entrySet().iterator();
+
+                    while(var2.hasNext()) {
+                        Map.Entry<String, List<IMSINumberSeriesAnalysisData>> entry = (Map.Entry)var2.next();
+                        Iterator var4 = ((List)entry.getValue()).iterator();
+
+                        while(var4.hasNext()) {
+                            IMSINumberSeriesAnalysisData insad = (IMSINumberSeriesAnalysisData)var4.next();
+                            paramKeys.addAll((Collection)insad.anres.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+                        }
+                    }
+
+                    int colIndex = 4;
+                    Iterator var7 = paramKeys.iterator();
+
+                    while(var7.hasNext()) {
+                        String key = (String)var7.next();
+                        columnMap.put(colIndex++, key);
+                    }
+
+                    Platform.runLater(() -> {
+                        columnMap.forEach((index, caption) -> {
+                            table.getColumns().add(createColumn(index, caption));
+                        });
+                    });
+                    Platform.runLater(() -> {
+                        dataObjects.forEach((fileName, list) -> {
+                            list.forEach((routeData) -> {
+                                Platform.runLater(() -> {
+                                    ObservableList<StringProperty> data = FXCollections.observableArrayList();
+                                    data.add(new SimpleStringProperty(fileName));
+                                    data.add(new SimpleStringProperty(routeData.imsi));
+                                    data.add(new SimpleStringProperty(routeData.m));
+                                    data.add(new SimpleStringProperty(routeData.na));
+                                    columnMap.forEach((index, caption) -> {
+                                        if (index > 3) {
+                                            data.add(new SimpleStringProperty((String)routeData.anres.get(caption)));
+                                        }
+
+                                    });
+                                    table.getItems().add(data);
+                                });
+                            });
+                        });
+                    });
+                    return null;
+                }
+            };
+            Thread thread2 = new Thread(task2);
+            thread2.setDaemon(true);
+            thread2.start();
+        }
+
+        table.setPlaceholder(new Label("Finished."));
+    }
+
+    private TableColumn<ObservableList<StringProperty>, String> createColumn(int columnIndex, String columnTitle) {
+        TableColumn<ObservableList<StringProperty>, String> column = new TableColumn();
+        String title;
+        if (columnTitle != null && columnTitle.trim().length() != 0) {
+            title = columnTitle;
+        } else {
+            title = "Column " + (columnIndex + 1);
+        }
+
+        column.setText(title);
+        column.setCellValueFactory((cellDataFeatures) -> {
+            ObservableList<StringProperty> values = (ObservableList)cellDataFeatures.getValue();
+            return (ObservableValue)(columnIndex >= values.size() ? new SimpleStringProperty("") : (ObservableValue)((ObservableList)cellDataFeatures.getValue()).get(columnIndex));
+        });
+        return column;
     }
 }
 
