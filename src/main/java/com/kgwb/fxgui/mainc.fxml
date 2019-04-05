@@ -34,13 +34,13 @@
       <content>
         <AnchorPane fx:id="contentAnchorPane" minHeight="-1.0" minWidth="-1.0" VBox.vgrow="ALWAYS">
           <children>
-            <TableView fx:id="tableView" maxHeight="-1.0" maxWidth="-1.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-              <columns>
-                <TableColumn fx:id="fileName" maxWidth="100" prefWidth="158.0" text="C1" />
-                <TableColumn fx:id="softwareVersion" minWidth="0.0" prefWidth="105.0" text="C2" />
-                <TableColumn fx:id="bridgePriorityMappingType" minWidth="0.0" prefWidth="105.0" text="C2" />
-              </columns>
-            </TableView>
+<!--            <TableView fx:id="tableView" maxHeight="-1.0" maxWidth="-1.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">-->
+<!--              <columns>-->
+<!--                <TableColumn fx:id="colFileName" maxWidth="100" prefWidth="158.0" text="File" />-->
+<!--                <TableColumn fx:id="colSoftwareVersion" minWidth="0.0" prefWidth="105.0" text="Sw Rel.No" />-->
+<!--                <TableColumn fx:id="colBridgePriorityMappingType" minWidth="0.0" prefWidth="105.0" text="bridge Priority Mapping Type" />-->
+<!--              </columns>-->
+<!--            </TableView>-->
           </children>
         </AnchorPane>
       </content>

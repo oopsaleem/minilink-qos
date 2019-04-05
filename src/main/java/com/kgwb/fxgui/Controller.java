@@ -1,7 +1,6 @@
 package com.kgwb.fxgui;
 
 import com.kgwb.model.MiniLinkDeviceConfigWrapper;
-import com.sun.javafx.scene.control.skin.TableViewSkin;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -13,6 +12,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.apache.commons.io.FileUtils;
@@ -20,47 +21,66 @@ import org.apache.commons.io.LineIterator;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
 public class Controller implements Initializable {
+    public AnchorPane contentAnchorPane;
     @FXML
-    private TableView tableView;
+    private TableView<MiniLinkDeviceConfigWrapper> tableView;
     @FXML
     private ParallelProgressBar progress;
     @FXML
     private Label rightStatusLabel;
-
-    private List<MiniLinkDeviceConfigWrapper> dataObjects;
-    private Map<Integer, String> columnMap;
-
-
-    private static Method columnToFitMethod;
-
-    static {
-        try {
-            columnToFitMethod = TableViewSkin.class.getDeclaredMethod("resizeColumnToFitContent", TableColumn.class, int.class);
-            columnToFitMethod.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-    }
-
     @FXML
     private TextField urlTextEntry;
     @FXML
     private Button btnChangePathAndRun;
     @FXML
     private Button btnRun;
+    private ObservableList<MiniLinkDeviceConfigWrapper> dataObjects;
 
     public void initialize(URL location, ResourceBundle resources) {
+        tableView = new TableView<>();
+
+        Map<String, String> fieldCaption = new HashMap<>();
+
+        fieldCaption.put("file Name" ,"fileName");
+        fieldCaption.put("software Version" ,"softwareVersion");
+        fieldCaption.put("bridge Priority Mapping Type" ,"bridgePriorityMappingType");
+        fieldCaption.put("bridge NT Pcp Selection" ,"bridgeNtPcpSelection");
+        fieldCaption.put("bridge Priority Mapping Map" ,"bridgePriorityMappingMap");
+        fieldCaption.put("bridge Scheduler Profile" ,"bridgeSchedulerProfile");
+        fieldCaption.put("bridge Queue Set Profile" ,"bridgeQueueSetProfile");
+        fieldCaption.put("bridge Aging Enable" ,"bridgeAgingEnable");
+        fieldCaption.put("bridge Aging" ,"bridgeAging");
+        fieldCaption.put("scheduler ProfileName" ,"schedulerProfileName");
+        fieldCaption.put("tc Schedar Type Weight" ,"tcSchedarTypeWeight");
+        fieldCaption.put("queue Set Profile Name" ,"queueSetProfileName");
+        fieldCaption.put("tc Queue" ,"tcQueue");
+
+        fieldCaption.forEach((k, v)-> {
+            TableColumn<MiniLinkDeviceConfigWrapper, String> column = new TableColumn<>(k);
+            column.setId(v + "Col");
+            column.setCellValueFactory(new PropertyValueFactory<>(v));
+            tableView.getColumns().add(column);
+        });
+
+        contentAnchorPane.getChildren().add(tableView);
+        AnchorPane.setBottomAnchor(tableView, 0.0);
+        AnchorPane.setTopAnchor(tableView, 0.0);
+        AnchorPane.setLeftAnchor(tableView, 0.0);
+        AnchorPane.setRightAnchor(tableView, 0.0);
+
+        //        // Set Sort type for userName column
+        //        col.setSortType(TableColumn.SortType.DESCENDING);
+        //        lastNameCol.setSortable(false);
+
         urlTextEntry.setPromptText("Click [Change ...] to select folder of Mini-Link QoS *.cfg files.");
 
         btnChangePathAndRun.setOnAction(e -> {
@@ -113,14 +133,53 @@ public class Controller implements Initializable {
         final File[] files = folder.listFiles();
         progress.start(files.length);
 
-        dataObjects = new ArrayList<>();
-        dataObjects.clear();
+        int max = files.length;
+
+        dataObjects = FXCollections.observableArrayList();
+
+//        Task<MiniLinkDeviceConfigWrapper> task = new Task<MiniLinkDeviceConfigWrapper>() {
+//            @Override protected MiniLinkDeviceConfigWrapper call() throws Exception {
+//                int iterations;
+//                long ms = System.currentTimeMillis();
+//                for (iterations = 0; iterations < max; iterations++) {
+//                    if (isCancelled()) {
+//                        updateMessage("Cancelled");
+//                        break;
+//                    }
+//                    updateMessage("Processing " + iterations);
+//                    updateProgress(iterations, max);
+//                    progress.add(1);
+//
+//                    // Now block the thread for a short time, but be sure
+//                    // to check the interrupted exception for cancellation!
+//                    try {
+//                        System.out.println(files[iterations].getName());
+//                        MiniLinkDeviceConfigWrapper configWrapper = process(files[iterations]);
+//                        dataObjects.add(configWrapper);
+//                    } catch (IOException interrupted) {
+//                        if (isCancelled()) {
+//                            updateMessage("Cancelled");
+//                            break;
+//                        }
+//                    }
+//                }
+//                return iterations;
+//            }
+//        };
+//
+//        Thread th = new Thread(task);
+//        th.setDaemon(true);
+//        th.start();
+
+        //https://docs.oracle.com/javase/8/javafx/api/javafx/concurrent/Task.html
+        //https://stackoverflow.com/questions/32498307/in-javafx-is-an-observablearraylist-thread-safe
         new Thread(() -> {
             long ms = System.currentTimeMillis();
             Stream.of(files).parallel().forEach(file -> {
                 progress.add(1);
                 if (!file.isDirectory()) {
                     try {
+                        System.out.println(file.getName());
                         MiniLinkDeviceConfigWrapper configWrapper = process(file);
                         dataObjects.add(configWrapper);
                     } catch (Exception ignored) {
@@ -130,16 +189,9 @@ public class Controller implements Initializable {
             });
             Platform.runLater(() -> {
                 rightStatusLabel.setText("" + (System.currentTimeMillis() - ms) + " ms");
-
-                ObservableList<StringProperty> data = FXCollections.observableArrayList();
-                dataObjects.forEach( m -> {
-                    data.add(new SimpleStringProperty(m.getFileName()));
-                });
-
-                tableView.setItems(data);
+                tableView.setItems(dataObjects);
                 btnRun.setDisable(false);
                 progress.setVisible(false);
-
             });
         }).start();
     }
@@ -261,103 +313,4 @@ public class Controller implements Initializable {
         return new MiniLinkDeviceConfigWrapper(fileName, ml_su_release, ml_brg_prio_m_type, ml_brg_nt_pcp_selection, ml_list_brg_prio_m_map.toArray(new String[0]), ml_brg_sdlr_profile, ml_brg_qu_set_profile,
                 ml_brg_aging_enable, ml_list_brg_aging.toArray(new String[0]), ml_brg_sdlr_profile_name, ml_list_tc_sdlr_typeN_weight.toArray(new String[0]), ml_brg_qu_set_profile_name, ml_list_tc_qu.toArray(new String[0]));
     }
-
-    private void populateTable(final TableView<ObservableList<StringProperty>> table, String urlSpec) {
-        table.getItems().clear();
-        table.getColumns().clear();
-        table.setPlaceholder(new Label("Loading..."));
-
-        if (this.dataObjects != null && this.dataObjects.size() > 0) {
-            Task<Void> task2 = new Task<Void>() {
-                protected Void call() throws Exception {
-                    columnMap = new TreeMap();
-                    Set<String> paramKeys = new HashSet();
-                    columnMap.put(0, "File");
-                    columnMap.put(1, "IMSI");
-                    columnMap.put(2, "M");
-                    columnMap.put(3, "NA");
-                    Iterator var2 = dataObjects.entrySet().iterator();
-
-                    while(var2.hasNext()) {
-                        Map.Entry<String, List<IMSINumberSeriesAnalysisData>> entry = (Map.Entry)var2.next();
-                        Iterator var4 = ((List)entry.getValue()).iterator();
-
-                        while(var4.hasNext()) {
-                            IMSINumberSeriesAnalysisData insad = (IMSINumberSeriesAnalysisData)var4.next();
-                            paramKeys.addAll((Collection)insad.anres.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
-                        }
-                    }
-
-                    int colIndex = 4;
-                    Iterator var7 = paramKeys.iterator();
-
-                    while(var7.hasNext()) {
-                        String key = (String)var7.next();
-                        columnMap.put(colIndex++, key);
-                    }
-
-                    Platform.runLater(() -> {
-                        columnMap.forEach((index, caption) -> {
-                            table.getColumns().add(createColumn(index, caption));
-                        });
-                    });
-                    Platform.runLater(() -> {
-                        dataObjects.forEach((fileName, list) -> {
-                            list.forEach((routeData) -> {
-                                Platform.runLater(() -> {
-                                    ObservableList<StringProperty> data = FXCollections.observableArrayList();
-                                    data.add(new SimpleStringProperty(fileName));
-                                    data.add(new SimpleStringProperty(routeData.imsi));
-                                    data.add(new SimpleStringProperty(routeData.m));
-                                    data.add(new SimpleStringProperty(routeData.na));
-                                    columnMap.forEach((index, caption) -> {
-                                        if (index > 3) {
-                                            data.add(new SimpleStringProperty((String)routeData.anres.get(caption)));
-                                        }
-
-                                    });
-                                    table.getItems().add(data);
-                                });
-                            });
-                        });
-                    });
-                    return null;
-                }
-            };
-            Thread thread2 = new Thread(task2);
-            thread2.setDaemon(true);
-            thread2.start();
-        }
-
-        table.setPlaceholder(new Label("Finished."));
-    }
-
-    private TableColumn<ObservableList<StringProperty>, String> createColumn(int columnIndex, String columnTitle) {
-        TableColumn<ObservableList<StringProperty>, String> column = new TableColumn();
-        String title;
-        if (columnTitle != null && columnTitle.trim().length() != 0) {
-            title = columnTitle;
-        } else {
-            title = "Column " + (columnIndex + 1);
-        }
-
-        column.setText(title);
-        column.setCellValueFactory((cellDataFeatures) -> {
-            ObservableList<StringProperty> values = (ObservableList)cellDataFeatures.getValue();
-            return (ObservableValue)(columnIndex >= values.size() ? new SimpleStringProperty("") : (ObservableValue)((ObservableList)cellDataFeatures.getValue()).get(columnIndex));
-        });
-        return column;
-    }
 }
-
-
-//        personTable.setMinWidth(1024);
-//        nameCol.prefWidthProperty().bind(personTable.widthProperty().divide(4)); // w * 1/4
-//        surnameCol.prefWidthProperty().bind(personTable.widthProperty().divide(2)); // w * 1/2
-//        emailCol.prefWidthProperty().bind(personTable.widthProperty().divide(4)); // w * 1/4
-//        personTable.setColumnResizePolicy( TableView.CONSTRAINED_RESIZE_POLICY);
-//        nameCol.setMaxWidth( 1f * Integer.MAX_VALUE * 20 ); // 50% width
-//        surnameCol.setMaxWidth( 1f * Integer.MAX_VALUE * 70 ); // 30% width
-//        emailCol.setMaxWidth( 1f * Integer.MAX_VALUE * 10 ); // 20% width
-//        autoFitTable(personTable);
-//        personTable.setColumnResizePolicy(p -> true);

@@ -3,16 +3,21 @@ package com.kgwb.model;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MiniLinkDeviceConfigWrapper {
 
-    public MiniLinkDeviceConfigWrapper() {
-    }
-
-    private final SimpleStringProperty fileName ;
-    private final SimpleStringProperty softwareVersion ;
+    private SimpleStringProperty fileName;
+    private SimpleStringProperty softwareVersion;
+    private SimpleStringProperty bridgePriorityMappingType;
+    private SimpleStringProperty bridgeNtPcpSelection;
+    private SimpleStringProperty bridgePriorityMappingMap;
+    private SimpleStringProperty bridgeSchedulerProfile;
+    private SimpleStringProperty bridgeQueueSetProfile;
+    private SimpleBooleanProperty bridgeAgingEnable;
+    private SimpleStringProperty bridgeAging;
+    private SimpleStringProperty schedulerProfileName;
+    private SimpleStringProperty tcSchedarTypeWeight;
+    private SimpleStringProperty queueSetProfileName;
+    private SimpleStringProperty tcQueue;
 
     public MiniLinkDeviceConfigWrapper(String fileName,
                                        String softwareVersion,
@@ -42,11 +47,29 @@ public class MiniLinkDeviceConfigWrapper {
         this.tcQueue = new SimpleStringProperty(String.join(", ", tcQueue));
     }
 
+    public String getFileName() {
+        return fileName.get();
+    }
+
+    public SimpleStringProperty fileNameProperty() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName.set(fileName);
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion.get();
+    }
+
     public SimpleStringProperty softwareVersionProperty() {
         return softwareVersion;
     }
 
-    private SimpleStringProperty bridgePriorityMappingType = new SimpleStringProperty();
+    public void setSoftwareVersion(String softwareVersion) {
+        this.softwareVersion.set(softwareVersion);
+    }
 
     public String getBridgePriorityMappingType() {
         return bridgePriorityMappingType.get();
@@ -56,7 +79,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgePriorityMappingType;
     }
 
-    private SimpleStringProperty bridgeNtPcpSelection = new SimpleStringProperty();
+    public void setBridgePriorityMappingType(String bridgePriorityMappingType) {
+        this.bridgePriorityMappingType.set(bridgePriorityMappingType);
+    }
 
     public String getBridgeNtPcpSelection() {
         return bridgeNtPcpSelection.get();
@@ -66,7 +91,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgeNtPcpSelection;
     }
 
-    private SimpleStringProperty bridgePriorityMappingMap = new SimpleStringProperty();
+    public void setBridgeNtPcpSelection(String bridgeNtPcpSelection) {
+        this.bridgeNtPcpSelection.set(bridgeNtPcpSelection);
+    }
 
     public String getBridgePriorityMappingMap() {
         return bridgePriorityMappingMap.get();
@@ -76,7 +103,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgePriorityMappingMap;
     }
 
-    private SimpleStringProperty bridgeSchedulerProfile = new SimpleStringProperty();
+    public void setBridgePriorityMappingMap(String bridgePriorityMappingMap) {
+        this.bridgePriorityMappingMap.set(bridgePriorityMappingMap);
+    }
 
     public String getBridgeSchedulerProfile() {
         return bridgeSchedulerProfile.get();
@@ -86,7 +115,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgeSchedulerProfile;
     }
 
-    private SimpleStringProperty bridgeQueueSetProfile = new SimpleStringProperty();
+    public void setBridgeSchedulerProfile(String bridgeSchedulerProfile) {
+        this.bridgeSchedulerProfile.set(bridgeSchedulerProfile);
+    }
 
     public String getBridgeQueueSetProfile() {
         return bridgeQueueSetProfile.get();
@@ -96,9 +127,11 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgeQueueSetProfile;
     }
 
-    private SimpleBooleanProperty bridgeAgingEnable = new SimpleBooleanProperty();
+    public void setBridgeQueueSetProfile(String bridgeQueueSetProfile) {
+        this.bridgeQueueSetProfile.set(bridgeQueueSetProfile);
+    }
 
-    public boolean getBridgeAgingEnable() {
+    public boolean isBridgeAgingEnable() {
         return bridgeAgingEnable.get();
     }
 
@@ -106,7 +139,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgeAgingEnable;
     }
 
-    private SimpleStringProperty bridgeAging = new SimpleStringProperty();
+    public void setBridgeAgingEnable(boolean bridgeAgingEnable) {
+        this.bridgeAgingEnable.set(bridgeAgingEnable);
+    }
 
     public String getBridgeAging() {
         return bridgeAging.get();
@@ -116,7 +151,9 @@ public class MiniLinkDeviceConfigWrapper {
         return bridgeAging;
     }
 
-    private SimpleStringProperty schedulerProfileName = new SimpleStringProperty();
+    public void setBridgeAging(String bridgeAging) {
+        this.bridgeAging.set(bridgeAging);
+    }
 
     public String getSchedulerProfileName() {
         return schedulerProfileName.get();
@@ -126,7 +163,9 @@ public class MiniLinkDeviceConfigWrapper {
         return schedulerProfileName;
     }
 
-    private SimpleStringProperty tcSchedarTypeWeight = new SimpleStringProperty();
+    public void setSchedulerProfileName(String schedulerProfileName) {
+        this.schedulerProfileName.set(schedulerProfileName);
+    }
 
     public String getTcSchedarTypeWeight() {
         return tcSchedarTypeWeight.get();
@@ -136,7 +175,9 @@ public class MiniLinkDeviceConfigWrapper {
         return tcSchedarTypeWeight;
     }
 
-    private SimpleStringProperty queueSetProfileName = new SimpleStringProperty();
+    public void setTcSchedarTypeWeight(String tcSchedarTypeWeight) {
+        this.tcSchedarTypeWeight.set(tcSchedarTypeWeight);
+    }
 
     public String getQueueSetProfileName() {
         return queueSetProfileName.get();
@@ -146,7 +187,9 @@ public class MiniLinkDeviceConfigWrapper {
         return queueSetProfileName;
     }
 
-    private SimpleStringProperty tcQueue = new SimpleStringProperty();
+    public void setQueueSetProfileName(String queueSetProfileName) {
+        this.queueSetProfileName.set(queueSetProfileName);
+    }
 
     public String getTcQueue() {
         return tcQueue.get();
@@ -154,5 +197,9 @@ public class MiniLinkDeviceConfigWrapper {
 
     public SimpleStringProperty tcQueueProperty() {
         return tcQueue;
+    }
+
+    public void setTcQueue(String tcQueue) {
+        this.tcQueue.set(tcQueue);
     }
 }
