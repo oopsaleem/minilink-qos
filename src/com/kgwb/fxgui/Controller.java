@@ -8,19 +8,18 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.text.Font;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
-
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -32,9 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -98,15 +96,31 @@ public class Controller implements Initializable {
         fieldCaption.put("eth int 19", "ethernetInterface19");
         fieldCaption.put("eth int 20", "ethernetInterface20");
 
-//        AtomicInteger coli = new AtomicInteger();
         fieldCaption.forEach((k, v) -> {
             TableColumn<MiniLinkDeviceConfigWrapper, String> column = new TableColumn<>(k);
             column.setId(v + "Col");
             column.setCellValueFactory(new PropertyValueFactory<>(v));
             tableView.getColumns().add(column);
-//            coli.getAndIncrement();
         });
 
+        tableView.setRowFactory( tv ->{
+            TableRow<MiniLinkDeviceConfigWrapper> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (! row.isEmpty() && event.getButton()== MouseButton.PRIMARY
+                        && event.getClickCount() == 2) {
+
+                    MiniLinkDeviceConfigWrapper clickedRow = row.getItem();
+
+                    File file = new File(String.format("%s/%s", urlTextEntry.getText(), clickedRow.getFileName()));
+                    try {
+                        Desktop.getDesktop().open(file);
+                    } catch (IOException e) {
+                        messageBox("Unable to open File !", e.getMessage());
+                    }
+                }
+            });
+            return row ;
+        });
         contentAnchorPane.getChildren().add(tableView);
         AnchorPane.setBottomAnchor(tableView, 0.0);
         AnchorPane.setTopAnchor(tableView, 0.0);
@@ -205,7 +219,7 @@ public class Controller implements Initializable {
         if (!(folder.exists() || folder.isDirectory())) return;
 
         final File[] files = folder.listFiles();
-        int max = files.length;
+        int max = files != null ? files.length : 0;
         progress.start(max);
 
         //https://docs.oracle.com/javase/8/javafx/api/javafx/concurrent/Task.html
@@ -213,7 +227,7 @@ public class Controller implements Initializable {
 
         Task<Void> task = new Task<Void>() {
             @Override
-            protected Void call() throws Exception {
+            protected Void call() {
                 int iterations;
                 long ms = System.currentTimeMillis();
                 ObservableList<MiniLinkDeviceConfigWrapper> dataObjects = FXCollections.observableArrayList();
@@ -227,8 +241,6 @@ public class Controller implements Initializable {
                     updateProgress(iterations, max);
 
                     progress.add(1);
-                    // Now block the thread for a short time, but be sure
-                    // to check the interrupted exception for cancellation!
                     try {
                         MiniLinkDeviceConfigWrapper configWrapper = process(files[iterations]);
                         dataObjects.add(configWrapper);
@@ -260,7 +272,7 @@ public class Controller implements Initializable {
         };
 
         btnRun.setOnAction(event -> { //Start/Stop
-            if (task != null && task.isRunning()) {
+            if (task.isRunning()) {
                 task.cancel();
                 return;
             }
@@ -302,7 +314,8 @@ public class Controller implements Initializable {
             if (regexMatcher.find()) {
                 siteId = regexMatcher.group("site");
             }
-        }catch (PatternSyntaxException ignore){}
+        } catch (PatternSyntaxException ignore) {
+        }
 
         boolean ml_brg_aging_enable = false;
         boolean flag_brg_aging = false;
@@ -396,7 +409,7 @@ public class Controller implements Initializable {
                         flag_eth_prf = false;
                     } else if (line.startsWith(" scheduler-profile ")) {
                         try {
-                            Pattern regex = Pattern.compile(" scheduler-profile (?<profile>\\d+) name \\\"(?<name>.*?)\"");
+                            Pattern regex = Pattern.compile(" scheduler-profile (?<profile>\\d+) name \"(?<name>.*?)\"");
                             Matcher regexMatcher = regex.matcher(line);
                             if (regexMatcher.find()) {
                                 ml_brg_sdlr_profile = regexMatcher.group("profile");
@@ -408,7 +421,7 @@ public class Controller implements Initializable {
                         ml_list_tc_sdlr_typeN_weight.add(line.replace("  tc-scheduler-type-and-weight ", ""));
                     } else if (line.startsWith(" queue-set-profile ")) {
                         try {
-                            Pattern regex = Pattern.compile(" queue-set-profile (?<profile>\\d+) name \\\"(?<name>.*?)\"");
+                            Pattern regex = Pattern.compile(" queue-set-profile (?<profile>\\d+) name \"(?<name>.*?)\"");
                             Matcher regexMatcher = regex.matcher(line);
                             if (regexMatcher.find()) {
                                 ml_brg_qu_set_profile = regexMatcher.group("profile");
@@ -517,26 +530,26 @@ public class Controller implements Initializable {
                     if (flag_bridge_port) {
                         if (line.startsWith(" exit")) flag_bridge_port = false;
 
-                        if (currentIntEthKey.isEmpty()) {
-                            continue;
-                        } else if (line.startsWith(" role")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                        } else if (line.startsWith(" trusted")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                        } else if (line.startsWith(" user-priority-mapping ")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.replace(" user-priority-mapping ", ""));
-                        } else if (line.startsWith("  exit")) {
-                            flag_policing = false;
-                        } else if (line.startsWith(" policing")) {
-                            flag_policing = true;
-                        } else if (flag_policing && line.startsWith("  mode ")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                        } else if (line.startsWith("  user-priority-mapping ")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.replace("  user-priority-mapping ", ""));
-                        } else if (line.startsWith("  scheduler-profile ")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                        } else if (line.startsWith("  queue-set-profile ")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                        if (!currentIntEthKey.isEmpty()) {
+                            if (line.startsWith(" role")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            } else if (line.startsWith(" trusted")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            } else if (line.startsWith(" user-priority-mapping ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.replace(" user-priority-mapping ", ""));
+                            } else if (line.startsWith("  exit")) {
+                                flag_policing = false;
+                            } else if (line.startsWith(" policing")) {
+                                flag_policing = true;
+                            } else if (flag_policing && line.startsWith("  mode ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            } else if (line.startsWith("  user-priority-mapping ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.replace("  user-priority-mapping ", ""));
+                            } else if (line.startsWith("  scheduler-profile ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            } else if (line.startsWith("  queue-set-profile ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            }
                         }
                     }
                 } //1.3
