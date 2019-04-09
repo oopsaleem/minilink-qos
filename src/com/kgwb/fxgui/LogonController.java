@@ -21,6 +21,7 @@ import java.util.ResourceBundle;
 
 public class LogonController implements Initializable {
     private static final String STR_STAGE_TITLE = "Mini-Link QoS Tool";
+    @FXML private CheckBox rememberMeCheckBox;
     @FXML private ImageView loginIcon;
     @FXML private TextField userTextField;
     @FXML private PasswordField pwBox;
@@ -32,21 +33,46 @@ public class LogonController implements Initializable {
     }
 
     public void initialize(URL location, ResourceBundle resources) {
-        Image loginIconImage = new Image(getClass().getResourceAsStream("/img/BO_Security_Permission_72x72.png"));
-        loginIcon.setImage(loginIconImage);
+        Image loginIconImage = new Image(getClass().getResourceAsStream("Security_Permission.png"));
+        this.loginIcon.setImage(loginIconImage);
         this.actionResultText.setVisible(false);
         this.logonButton.setDisable(true);
         this.userTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             this.logonButton.setDisable(newValue.trim().isEmpty());
+            this.actionResultText.setVisible(false);
         });
         this.logonButton.setDefaultButton(true);
         this.cancelButton.setCancelButton(true);
 
-        Platform.runLater(() -> this.userTextField.requestFocus());
+        Platform.runLater(() -> {
+            this.userTextField.requestFocus();
+
+            //Remove to keep login form active
+            try {
+                Parent parent = null;
+                parent = FXMLLoader.load(this.getClass().getResource("mainc.fxml"));
+                Stage applicationStage = (Stage) logonButton.getScene().getWindow();
+                applicationStage.hide();
+                applicationStage.setTitle(STR_STAGE_TITLE);
+                applicationStage.setMinHeight(600.0D);
+                applicationStage.setMinWidth(800.0D);
+                Scene mainScene = new Scene(parent, 1024.0D, 768.0D);
+                applicationStage.setScene(mainScene);
+                applicationStage.show();
+                applicationStage.setMaximized(true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void logonButtonAction(ActionEvent actionEvent) throws IOException {
-        this.actionResultText.setVisible(false);
+        if(!userTextField.getText().contentEquals("demo")) {
+            actionResultText.setText("Invalid username or password.");
+            this.actionResultText.setVisible(true);
+            return;
+        }
+
         Parent parent = FXMLLoader.load(this.getClass().getResource("mainc.fxml"));
         Stage applicationStage = (Stage)((Node)actionEvent.getSource()).getScene().getWindow();
         applicationStage.hide();
@@ -56,6 +82,7 @@ public class LogonController implements Initializable {
         Scene mainScene = new Scene(parent, 1024.0D, 768.0D);
         applicationStage.setScene(mainScene);
         applicationStage.show();
+        applicationStage.setMaximized(true);
     }
 
     public void cancelButtonAction() {

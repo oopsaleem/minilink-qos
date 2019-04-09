@@ -35,4 +35,9 @@ public class ParallelProgressBar extends ProgressBar {
     public void add(int n) {
         myDoneCount.addAndGet(n);
     }
+
+    public void stop() {
+        myWatcher.stop();
+        myTotalCount = 0;
+    }
 }

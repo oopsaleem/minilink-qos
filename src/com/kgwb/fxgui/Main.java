@@ -8,6 +8,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -20,6 +21,7 @@ public class Main extends Application {
 
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(this.getClass().getResource("logonForm.fxml"));
+        primaryStage.getIcons().add(new Image(Main.class.getResourceAsStream("settings.png")));
         primaryStage.setTitle(STR_STAGE_TITLE);
         primaryStage.setMinHeight(240.0D);
         primaryStage.setMinWidth(400.0D);
