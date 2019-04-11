@@ -47,35 +47,55 @@ public class MiniLinkDeviceConfigWrapper {
     public MiniLinkDeviceConfigWrapper(String fileName,
                                        String siteId,
                                        String softwareVersion,
+                                       String bridgeSchedulerProfile,
+                                       String bridgeQueueSetProfile,
                                        String bridgePriorityMappingType,
                                        String bridgeNtPcpSelection,
                                        String[] bridgePriorityMappingMap,
-                                       String bridgeSchedulerProfile,
-                                       String bridgeQueueSetProfile,
+                                       Map<String, List<String>> profiles,
+                                       Map<String, List<String>> queueSets,
                                        boolean bridgeAgingEnable,
                                        String[] bridgeAging,
-                                       String schedulerProfileName,
-                                       String[] tcSchedarTypeWeight,
-                                       String queueSetProfileName,
-                                       String[] tcQueue,
+//                                       String[] tcSchedarTypeWeight,
+//                                       String[] tcQueue,
                                        Map<String, List<String>> eths) {
         this.fileName = new SimpleStringProperty(fileName);
         this.siteId = new SimpleStringProperty(siteId);
         this.softwareVersion = new SimpleStringProperty(softwareVersion);
+        this.bridgeSchedulerProfile = new SimpleStringProperty(bridgeSchedulerProfile);
+        this.bridgeQueueSetProfile = new SimpleStringProperty(bridgeQueueSetProfile);
         this.bridgePriorityMappingType = new SimpleStringProperty(bridgePriorityMappingType);
         this.bridgeNtPcpSelection = new SimpleStringProperty(bridgeNtPcpSelection);
         this.bridgePriorityMappingMap = new SimpleStringProperty(String.join(", ", bridgePriorityMappingMap));
-        this.bridgeSchedulerProfile = new SimpleStringProperty(bridgeSchedulerProfile);
-        this.bridgeQueueSetProfile = new SimpleStringProperty(bridgeQueueSetProfile);
         this.bridgeAgingEnable = new SimpleBooleanProperty(bridgeAgingEnable);
         this.bridgeAging = new SimpleStringProperty(String.join(", ", bridgeAging));
-        this.schedulerProfileName = new SimpleStringProperty(schedulerProfileName);
-        this.tcSchedarTypeWeight = new SimpleStringProperty(String.join(", ", tcSchedarTypeWeight));
-        this.queueSetProfileName = new SimpleStringProperty(queueSetProfileName);
-        this.tcQueue = new SimpleStringProperty(String.join(", ", tcQueue));
+//        this.tcSchedarTypeWeight = new SimpleStringProperty(String.join(", ", tcSchedarTypeWeight));
+//        this.schedulerProfileName = new SimpleStringProperty(schedulerProfileName);
+//        this.tcQueue = new SimpleStringProperty(String.join(", ", tcQueue));
+//        this.queueSetProfileName = new SimpleStringProperty(queueSetProfileName);
+
+        for(Map.Entry<String, List<String>> entry : profiles.entrySet()) {
+            String[] kSplit = entry.getKey().split(", ");
+            if(!kSplit[0].contentEquals(bridgeSchedulerProfile))
+                continue;
+            this.schedulerProfileName = new SimpleStringProperty(kSplit[1]);
+            this.tcSchedarTypeWeight = new SimpleStringProperty(String.join(", ", entry.getValue()));
+        }
+
+        for(Map.Entry<String, List<String>> entry : queueSets.entrySet()) {
+            String[] kSplit = entry.getKey().split(", ");
+            if(!kSplit[0].contentEquals(bridgeQueueSetProfile))
+                continue;
+            this.queueSetProfileName = new SimpleStringProperty(kSplit[1]);
+            this.tcQueue = new SimpleStringProperty(String.join(", ", entry.getValue()));
+        }
 
         int ethi = 0;
         for (Map.Entry<String, List<String>> entry : eths.entrySet()) {
+            if(softwareVersion.startsWith("1.3") && entry.getKey().toLowerCase().contains("wan"))
+                continue;
+            else if(softwareVersion.startsWith("1.7") && entry.getValue().get(0).toLowerCase().contains("wan"))
+                continue;
             ethi++;
             switch (ethi) {
                 case 1:

@@ -137,7 +137,7 @@ public class Controller implements Initializable {
             if (progress.isRunning()) return;
 
             Stage primaryStage = (Stage) ((Node) e.getSource()).getScene().getWindow();
-            String browsedPath = verifyOrBrowseFolder(primaryStage, "");
+            String browsedPath = verifyOrBrowseFolder(primaryStage, urlTextEntry.getText(), true );
             if (browsedPath == null) return;
 
             urlTextEntry.setText(browsedPath);
@@ -149,7 +149,7 @@ public class Controller implements Initializable {
         btnRun.setOnAction(event -> {
             String currentFolderPath = urlTextEntry.getText();
             Stage primaryStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            String browsedPath = verifyOrBrowseFolder(primaryStage, currentFolderPath);
+            String browsedPath = verifyOrBrowseFolder(primaryStage, currentFolderPath, false);
 
             if (browsedPath == null) return;
             urlTextEntry.setText(browsedPath);
@@ -192,21 +192,26 @@ public class Controller implements Initializable {
                 fileOut.close();
                 Desktop.getDesktop().open(file);
             } catch (FileNotFoundException e) {
-                messageBox("Export Error", "File not found. " + e.getMessage());
+                messageBox("Export Error", e.getMessage());
             } catch (IOException e) {
                 messageBox("I/O Export Error", e.getMessage());
             }
         });
     }
 
-    private String verifyOrBrowseFolder(Stage primaryStage, String initDir) {
+    private String verifyOrBrowseFolder(Stage primaryStage, String initDir, boolean forceChange) {
         File folder = new File(initDir);
 
-        if (!folder.exists() || !folder.isDirectory()) {
+        if (folder.exists() && folder.isDirectory() && !forceChange)
+            return folder.getAbsolutePath();
+        else {
             DirectoryChooser directoryChooser = new DirectoryChooser();
+            if( folder.exists()) {
+                directoryChooser.setInitialDirectory(folder);
+            }
             File selectedDirectory = directoryChooser.showDialog(primaryStage);
             return selectedDirectory != null ? selectedDirectory.getAbsolutePath() : null;
-        } else return folder.getAbsolutePath();
+        }
     }
 
     private void startProcess(boolean start) {
@@ -280,7 +285,7 @@ public class Controller implements Initializable {
             String currentFolderPath = urlTextEntry.getText();
 
             Stage primaryStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            String browsedPath = verifyOrBrowseFolder(primaryStage, currentFolderPath);
+            String browsedPath = verifyOrBrowseFolder(primaryStage, currentFolderPath, false);
             if (browsedPath == null) return;
             urlTextEntry.setText(browsedPath);
 
@@ -300,16 +305,16 @@ public class Controller implements Initializable {
         String ml_su_activerelease = "";
         String ml_brg_nt_pcp_selection = "";
         String ml_brg_prio_m_type = "";
+        String key_current_sdlr_profile = "";
+        String key_current_qu_set_profile = "";
         String ml_brg_sdlr_profile = "";
         String ml_brg_qu_set_profile = "";
-        String ml_brg_sdlr_profile_name = "";
-        String ml_brg_qu_set_profile_name = "";
         String ml_su_release = "";
         String fileName = file.getName();
         String siteId = "";
 
         try {
-            Pattern regex = Pattern.compile("NE.\\d+.\\w+-(?<site>\\d+)");
+            Pattern regex = Pattern.compile("NE.\\d+.\\w+-(?<site>\\d+-\\w+)_");
             Matcher regexMatcher = regex.matcher(fileName);
             if (regexMatcher.find()) {
                 siteId = regexMatcher.group("site");
@@ -327,10 +332,12 @@ public class Controller implements Initializable {
         float su_release = 0.0f;
 
         Map<String, List<String>> ml_map_int_eth_port = new HashMap<>();
+        Map<String, List<String>> ml_map_sdlr_profile = new HashMap<>();
+        Map<String, List<String>> ml_map_qu_set_profile = new HashMap<>();
         List<String> ml_list_brg_prio_m_map = new ArrayList<>();
         List<String> ml_list_brg_aging = new ArrayList<>();
-        List<String> ml_list_tc_sdlr_typeN_weight = new ArrayList<>();
-        List<String> ml_list_tc_qu = new ArrayList<>();
+//        List<String> ml_list_tc_sdlr_typeN_weight = new ArrayList<>();
+//        List<String> ml_list_tc_qu = new ArrayList<>();
 
         String currentIntEthKey = "";
         String currentIntEthernetWanLanDCN = "";
@@ -377,16 +384,14 @@ public class Controller implements Initializable {
                     continue;
                 }
 
-                /*
                 if (line.startsWith("bridge scheduler-profile ")) {
                     ml_brg_sdlr_profile = line.replace("bridge scheduler-profile ", "");
                     continue;
                 }
                 if (line.startsWith("bridge queue-set-profile ")) {
-                    ml_brg_qu_set_profile = line.replace("bridge queue-set-profile  ", "");
+                    ml_brg_qu_set_profile = line.replace("bridge queue-set-profile ", "");
                     continue;
                 }
-                */
 
                 if (!flag_brg_aging) {
                     if (line.startsWith("bridge aging ")) {
@@ -412,30 +417,38 @@ public class Controller implements Initializable {
                             Pattern regex = Pattern.compile(" scheduler-profile (?<profile>\\d+) name \"(?<name>.*?)\"");
                             Matcher regexMatcher = regex.matcher(line);
                             if (regexMatcher.find()) {
-                                ml_brg_sdlr_profile = regexMatcher.group("profile");
-                                ml_brg_sdlr_profile_name = regexMatcher.group("name");
+                                String sdlr_profile = regexMatcher.group("profile");
+                                String sdlr_profile_name = regexMatcher.group("name");
+                                key_current_sdlr_profile = String.format("%s, %s", sdlr_profile, sdlr_profile_name);
+                                ml_map_sdlr_profile.put(key_current_sdlr_profile, new ArrayList<>());
                             }
                         } catch (PatternSyntaxException ignore) {
                         }
                     } else if (line.startsWith("  tc-scheduler-type-and-weight ")) {
-                        ml_list_tc_sdlr_typeN_weight.add(line.replace("  tc-scheduler-type-and-weight ", ""));
+                        if(!key_current_sdlr_profile.isEmpty() && ml_map_sdlr_profile.containsKey(key_current_sdlr_profile)){
+                            ml_map_sdlr_profile.get(key_current_sdlr_profile).add(line.replace("  tc-scheduler-type-and-weight ", ""));
+                        }
+//                        ml_list_tc_sdlr_typeN_weight.add(line.replace("  tc-scheduler-type-and-weight ", ""));
                     } else if (line.startsWith(" queue-set-profile ")) {
                         try {
                             Pattern regex = Pattern.compile(" queue-set-profile (?<profile>\\d+) name \"(?<name>.*?)\"");
                             Matcher regexMatcher = regex.matcher(line);
                             if (regexMatcher.find()) {
-                                ml_brg_qu_set_profile = regexMatcher.group("profile");
-                                ml_brg_qu_set_profile_name = regexMatcher.group("name");
+                                key_current_qu_set_profile = String.format("%s, %s", regexMatcher.group("profile"), regexMatcher.group("name"));
+                                ml_map_qu_set_profile.put(key_current_qu_set_profile, new ArrayList<>());
                             }
                         } catch (PatternSyntaxException ignore) {
                         }
                     } else if (line.startsWith("   tc-queue ")) {
-                        ml_list_tc_qu.add(line.replace("   tc-queue ", ""));
+                        if(!key_current_qu_set_profile.isEmpty() && ml_map_qu_set_profile.containsKey(key_current_qu_set_profile)){
+                            ml_map_qu_set_profile.get(key_current_qu_set_profile).add(line.replace("   tc-queue ", ""));
+                        }
+//                        ml_list_tc_qu.add(line.replace("   tc-queue ", ""));
                     } else continue;
                 }
 
                 if (!flag_int_eth && line.startsWith("interface ethernet")) {
-                    Pattern regex = Pattern.compile("interface ethernet(-eps)? (?<eth>\\d+/\\d+/\\d+)(?<lanwan>[ a-z-]+)?");
+                    Pattern regex = Pattern.compile("interface ethernet(-eps)? (?<eth>\\d+/\\d+(\\+\\d+)?/\\d+)(?<lanwan>[ a-z-]+)?");
                     Matcher regexMatcher = regex.matcher(line);
                     if (regexMatcher.find()) {
                         currentIntEthernetWanLanDCN = regexMatcher.group("lanwan");
@@ -461,6 +474,10 @@ public class Controller implements Initializable {
                     } else if (line.startsWith(" no trapenable") || line.startsWith(" trapenable")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                     } else if (line.startsWith(" role")) {
+                        ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                    } if (line.startsWith(" scheduler-profile ")) {
+                        ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                    } if (line.startsWith(" queue-set-profile ")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                     } else if (line.startsWith("  no alarm-enable ethernet-down") || line.startsWith("  alarm-enable ethernet-down")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
@@ -533,6 +550,10 @@ public class Controller implements Initializable {
                         if (!currentIntEthKey.isEmpty()) {
                             if (line.startsWith(" role")) {
                                 ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            } if (line.startsWith(" scheduler-profile ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            } if (line.startsWith(" queue-set-profile ")) {
+                                ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                             } else if (line.startsWith(" trusted")) {
                                 ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                             } else if (line.startsWith(" user-priority-mapping ")) {
@@ -560,17 +581,17 @@ public class Controller implements Initializable {
                 fileName,
                 siteId,
                 ml_su_release,
+                ml_brg_sdlr_profile,
+                ml_brg_qu_set_profile,
                 ml_brg_prio_m_type,
                 ml_brg_nt_pcp_selection,
                 ml_list_brg_prio_m_map.toArray(new String[0]),
-                ml_brg_sdlr_profile,
-                ml_brg_qu_set_profile,
+                ml_map_sdlr_profile,
+                ml_map_qu_set_profile,
                 ml_brg_aging_enable,
                 ml_list_brg_aging.toArray(new String[0]),
-                ml_brg_sdlr_profile_name,
-                ml_list_tc_sdlr_typeN_weight.toArray(new String[0]),
-                ml_brg_qu_set_profile_name,
-                ml_list_tc_qu.toArray(new String[0]),
+//                ml_list_tc_sdlr_typeN_weight.toArray(new String[0]),
+//                ml_list_tc_qu.toArray(new String[0]),
                 ml_map_int_eth_port
         );
     }
