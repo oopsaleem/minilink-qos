@@ -8,16 +8,16 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -25,13 +25,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
-import java.awt.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
-import java.util.List;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -113,9 +108,9 @@ public class Controller implements Initializable {
 
                     File file = new File(String.format("%s/%s", urlTextEntry.getText(), clickedRow.getFileName()));
                     try {
-                        Desktop.getDesktop().open(file);
+                        java.awt.Desktop.getDesktop().open(file);
                     } catch (IOException e) {
-                        messageBox("Unable to open File !", e.getMessage());
+                        exceptionDialog( Alert.AlertType.ERROR,"Error Opening File", "Unable to open File !", file.getPath(), e);
                     }
                 }
             });
@@ -126,10 +121,6 @@ public class Controller implements Initializable {
         AnchorPane.setTopAnchor(tableView, 0.0);
         AnchorPane.setLeftAnchor(tableView, 0.0);
         AnchorPane.setRightAnchor(tableView, 0.0);
-
-        //        // Set Sort type for userName column
-        //        col.setSortType(TableColumn.SortType.DESCENDING);
-        //        lastNameCol.setSortable(false);
 
         urlTextEntry.setPromptText("Click [Change ...] to select folder of Mini-Link QoS *.cfg files.");
 
@@ -190,11 +181,12 @@ public class Controller implements Initializable {
                 fileOut = new FileOutputStream(file);
                 workbook.write(fileOut);
                 fileOut.close();
-                Desktop.getDesktop().open(file);
+                java.awt.Desktop.getDesktop().open(file);
             } catch (FileNotFoundException e) {
-                messageBox("Export Error", e.getMessage());
+//                messageBox("Export Error", e.getMessage());
+                exceptionDialog(Alert.AlertType.ERROR, "Export Error", "Could not export file !", file.getPath(), e);
             } catch (IOException e) {
-                messageBox("I/O Export Error", e.getMessage());
+                exceptionDialog(Alert.AlertType.ERROR, "Export Error", "Could not export file due to Input/Output Error." ,file.getPath(), e);
             }
         });
     }
@@ -590,17 +582,43 @@ public class Controller implements Initializable {
                 ml_map_qu_set_profile,
                 ml_brg_aging_enable,
                 ml_list_brg_aging.toArray(new String[0]),
-//                ml_list_tc_sdlr_typeN_weight.toArray(new String[0]),
-//                ml_list_tc_qu.toArray(new String[0]),
                 ml_map_int_eth_port
         );
     }
 
-    private void messageBox(String header, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(header);
-        alert.setContentText(message);
+
+    //https://code.makery.ch/blog/javafx-dialogs-official/
+    private void exceptionDialog(Alert.AlertType alertType,  String title, String headerText, String contentText, Exception ex) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        alert.setContentText(contentText);
+
+        // Create expandable Exception.
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        ex.printStackTrace(pw);
+        String exceptionText = sw.toString();
+
+        Label label = new Label("The exception stacktrace was:");
+
+        TextArea textArea = new TextArea(exceptionText);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+
+        textArea.setMaxWidth(Double.MAX_VALUE);
+        textArea.setMaxHeight(Double.MAX_VALUE);
+        GridPane.setVgrow(textArea, Priority.ALWAYS);
+        GridPane.setHgrow(textArea, Priority.ALWAYS);
+
+        GridPane expContent = new GridPane();
+        expContent.setMaxWidth(Double.MAX_VALUE);
+        expContent.add(label, 0, 0);
+        expContent.add(textArea, 0, 1);
+
+        // Set expandable Exception into the dialog pane.
+        alert.getDialogPane().setExpandableContent(expContent);
+        alert.initStyle(StageStyle.UTILITY);
         alert.showAndWait();
     }
 }

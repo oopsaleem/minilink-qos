@@ -12,7 +12,9 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.net.URL;
@@ -90,6 +92,8 @@ public class LogonController implements Initializable {
         alert.setTitle("Cancel Confirmation");
         alert.setHeaderText("Exit Application?");
         alert.setContentText("Are you sure to exit from application?");
+        alert.initStyle(StageStyle.UTILITY);
+        alert.initModality(Modality.APPLICATION_MODAL);
         Optional<ButtonType> result = alert.showAndWait();
         if (result.get() == ButtonType.OK) {
             Platform.exit();

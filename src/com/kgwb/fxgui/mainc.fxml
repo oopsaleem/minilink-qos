@@ -2,33 +2,42 @@
 
 <?import com.kgwb.fxgui.ParallelProgressBar?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<VBox prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8.0.172-ea"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.kgwb.fxgui.Controller">
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.control.Separator?>
+<VBox prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.kgwb.fxgui.Controller">
     <HBox id="HBox" alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
         <padding>
-            <Insets bottom="3.0" left="3.0" right="3.0" top="3.0"/>
+            <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
         </padding>
-        <Label maxHeight="1.8" text="Source Path:" HBox.hgrow="ALWAYS"/>
-        <TextField fx:id="urlTextEntry" editable="false" maxHeight="1.8" text="c:\temp\ml_cfg" HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnChangePathAndRun" maxHeight="1.8" text="Change ..." HBox.hgrow="ALWAYS"/>
-        <Button fx:id="btnRun" maxHeight="1.8" text="Start" HBox.hgrow="ALWAYS"/>
-        <Pane HBox.hgrow="ALWAYS"/>
+        <Label maxHeight="1.8" text="Source Path:" HBox.hgrow="ALWAYS" />
+        <TextField fx:id="urlTextEntry" editable="false" maxHeight="1.8" text="c:\temp\ml_cfg" HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnChangePathAndRun" maxHeight="1.8" text="Change ..." HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnRun" maxHeight="1.8" text="Start" HBox.hgrow="ALWAYS" />
+        <Separator orientation="VERTICAL" HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnExport" text="Export" HBox.hgrow="ALWAYS" />
+        <Pane HBox.hgrow="ALWAYS" />
         <!--        <Label maxWidth="-1.0" text="Right status" HBox.hgrow="NEVER" />-->
-        <Button fx:id="btnExport" text="Export" HBox.hgrow="NEVER"/>
+<!--        <Button fx:id="btnAbout" text="about" HBox.hgrow="NEVER" />-->
     </HBox>
     <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
-        <AnchorPane fx:id="contentAnchorPane" VBox.vgrow="ALWAYS"/>
+        <AnchorPane fx:id="contentAnchorPane" VBox.vgrow="ALWAYS" />
     </ScrollPane>
     <HBox id="HBox" alignment="CENTER_LEFT" spacing="5.0" VBox.vgrow="NEVER">
         <padding>
-            <Insets bottom="3.0" left="3.0" right="3.0" top="3.0"/>
+            <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />
         </padding>
         <!--        <Label fx:id="leftStatusLabel" maxHeight="1.7976931348623157E308" maxWidth="-1.0" text="." HBox.hgrow="ALWAYS" />-->
-        <Pane HBox.hgrow="ALWAYS"/>
+        <Pane HBox.hgrow="ALWAYS" />
         <!--        <Button fx:id="cancelProgress" maxHeight="1.8" maxWidth="-1.0" text="Stop" visible="false" HBox.hgrow="NEVER" />-->
-        <ParallelProgressBar fx:id="progress" progress="NaN" visible="false" HBox.hgrow="NEVER"/>
-        <Label fx:id="rightStatusLabel" text="Ready" HBox.hgrow="NEVER"/>
+        <ParallelProgressBar fx:id="progress" progress="NaN" visible="false" HBox.hgrow="NEVER" />
+        <Label fx:id="rightStatusLabel" text="Ready" HBox.hgrow="NEVER" />
     </HBox>
 </VBox>
