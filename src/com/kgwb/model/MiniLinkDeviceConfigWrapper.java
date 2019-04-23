@@ -3,14 +3,13 @@ package com.kgwb.model;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MiniLinkDeviceConfigWrapper {
 
     private SimpleStringProperty fileName;
     private SimpleStringProperty siteId;
+    private SimpleStringProperty ipAddress;
     private SimpleStringProperty softwareVersion;
     private SimpleStringProperty bridgePriorityMappingType;
     private SimpleStringProperty bridgeNtPcpSelection;
@@ -46,6 +45,7 @@ public class MiniLinkDeviceConfigWrapper {
 
     public MiniLinkDeviceConfigWrapper(String fileName,
                                        String siteId,
+                                       String ipAddress,
                                        String softwareVersion,
                                        String bridgeSchedulerProfile,
                                        String bridgeQueueSetProfile,
@@ -61,6 +61,7 @@ public class MiniLinkDeviceConfigWrapper {
                                        Map<String, List<String>> eths) {
         this.fileName = new SimpleStringProperty(fileName);
         this.siteId = new SimpleStringProperty(siteId);
+        this.ipAddress = new SimpleStringProperty(ipAddress);
         this.softwareVersion = new SimpleStringProperty(softwareVersion);
         this.bridgeSchedulerProfile = new SimpleStringProperty(bridgeSchedulerProfile);
         this.bridgeQueueSetProfile = new SimpleStringProperty(bridgeQueueSetProfile);
@@ -96,67 +97,71 @@ public class MiniLinkDeviceConfigWrapper {
                 continue;
             else if(softwareVersion.startsWith("1.7") && entry.getValue().get(0).toLowerCase().contains("wan"))
                 continue;
+
+            String[] ethArrayData = entry.getValue().toArray(new String[0]);
+            Arrays.sort(ethArrayData);
+
             ethi++;
             switch (ethi) {
                 case 1:
-                    this.ethernetInterface1 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface1 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 2:
-                    this.ethernetInterface2 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface2 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 3:
-                    this.ethernetInterface3 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface3 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 4:
-                    this.ethernetInterface4 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface4 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 5:
-                    this.ethernetInterface5 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface5 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 6:
-                    this.ethernetInterface6 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface6 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 7:
-                    this.ethernetInterface7 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface7 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 8:
-                    this.ethernetInterface8 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface8 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 9:
-                    this.ethernetInterface9 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface9 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 10:
-                    this.ethernetInterface10 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface10 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 11:
-                    this.ethernetInterface11 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface11 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 12:
-                    this.ethernetInterface12 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface12 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 13:
-                    this.ethernetInterface13 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface13 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 14:
-                    this.ethernetInterface14 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface14 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 15:
-                    this.ethernetInterface15 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface15 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 16:
-                    this.ethernetInterface16 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface16 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 17:
-                    this.ethernetInterface17 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface17 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 18:
-                    this.ethernetInterface18 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface18 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 19:
-                    this.ethernetInterface19 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface19 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 case 20:
-                    this.ethernetInterface20 = new SimpleStringProperty(String.join(", ", entry.getValue().toArray(new String[0])));
+                    this.ethernetInterface20 = new SimpleStringProperty(String.join(", ", ethArrayData));
                     break;
                 default:
                     System.out.println("Extra columns expected !" +  eths.entrySet().size());
@@ -186,6 +191,18 @@ public class MiniLinkDeviceConfigWrapper {
 
     public void setSiteId(String siteId) {
         this.siteId.set(siteId);
+    }
+
+    public String getIpAddress() {
+        return ipAddress.get();
+    }
+
+    public SimpleStringProperty ipAddressProperty() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress.set(ipAddress);
     }
 
     public String getSoftwareVersion() {

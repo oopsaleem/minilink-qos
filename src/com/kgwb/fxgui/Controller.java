@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -26,6 +27,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -58,6 +60,7 @@ public class Controller implements Initializable {
 
         fieldCaption.put("file name", "fileName");
         fieldCaption.put("site", "siteId");
+        fieldCaption.put("ip address", "ipAddress");
         fieldCaption.put("software version", "softwareVersion");
         fieldCaption.put("bridge priority mapping type", "bridgePriorityMappingType");
         fieldCaption.put("bridge network pcp selection", "bridgeNtPcpSelection");
@@ -78,18 +81,18 @@ public class Controller implements Initializable {
         fieldCaption.put("eth int 6", "ethernetInterface6");
         fieldCaption.put("eth int 7", "ethernetInterface7");
         fieldCaption.put("eth int 8", "ethernetInterface8");
-        fieldCaption.put("eth int 9", "ethernetInterface9");
-        fieldCaption.put("eth int 10", "ethernetInterface10");
-        fieldCaption.put("eth int 11", "ethernetInterface11");
-        fieldCaption.put("eth int 12", "ethernetInterface12");
-        fieldCaption.put("eth int 13", "ethernetInterface13");
-        fieldCaption.put("eth int 14", "ethernetInterface14");
-        fieldCaption.put("eth int 15", "ethernetInterface15");
-        fieldCaption.put("eth int 16", "ethernetInterface16");
-        fieldCaption.put("eth int 17", "ethernetInterface17");
-        fieldCaption.put("eth int 18", "ethernetInterface18");
-        fieldCaption.put("eth int 19", "ethernetInterface19");
-        fieldCaption.put("eth int 20", "ethernetInterface20");
+//        fieldCaption.put("eth int 9", "ethernetInterface9");
+//        fieldCaption.put("eth int 10", "ethernetInterface10");
+//        fieldCaption.put("eth int 11", "ethernetInterface11");
+//        fieldCaption.put("eth int 12", "ethernetInterface12");
+//        fieldCaption.put("eth int 13", "ethernetInterface13");
+//        fieldCaption.put("eth int 14", "ethernetInterface14");
+//        fieldCaption.put("eth int 15", "ethernetInterface15");
+//        fieldCaption.put("eth int 16", "ethernetInterface16");
+//        fieldCaption.put("eth int 17", "ethernetInterface17");
+//        fieldCaption.put("eth int 18", "ethernetInterface18");
+//        fieldCaption.put("eth int 19", "ethernetInterface19");
+//        fieldCaption.put("eth int 20", "ethernetInterface20");
 
         fieldCaption.forEach((k, v) -> {
             TableColumn<MiniLinkDeviceConfigWrapper, String> column = new TableColumn<>(k);
@@ -98,10 +101,10 @@ public class Controller implements Initializable {
             tableView.getColumns().add(column);
         });
 
-        tableView.setRowFactory( tv ->{
+        tableView.setRowFactory(tv -> {
             TableRow<MiniLinkDeviceConfigWrapper> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
-                if (! row.isEmpty() && event.getButton()== MouseButton.PRIMARY
+                if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY
                         && event.getClickCount() == 2) {
 
                     MiniLinkDeviceConfigWrapper clickedRow = row.getItem();
@@ -110,11 +113,11 @@ public class Controller implements Initializable {
                     try {
                         java.awt.Desktop.getDesktop().open(file);
                     } catch (IOException e) {
-                        exceptionDialog( Alert.AlertType.ERROR,"Error Opening File", "Unable to open File !", file.getPath(), e);
+                        exceptionDialog("Error Opening File", "Unable to open File !", file.getPath(), e);
                     }
                 }
             });
-            return row ;
+            return row;
         });
         contentAnchorPane.getChildren().add(tableView);
         AnchorPane.setBottomAnchor(tableView, 0.0);
@@ -124,26 +127,15 @@ public class Controller implements Initializable {
 
         urlTextEntry.setPromptText("Click [Change ...] to select folder of Mini-Link QoS *.cfg files.");
 
-        btnChangePathAndRun.setOnAction(e -> {
+        btnChangePathAndRun.setOnAction(event -> {
             if (progress.isRunning()) return;
-
-            Stage primaryStage = (Stage) ((Node) e.getSource()).getScene().getWindow();
-            String browsedPath = verifyOrBrowseFolder(primaryStage, urlTextEntry.getText(), true );
-            if (browsedPath == null) return;
-
-            urlTextEntry.setText(browsedPath);
-
+            if (FileSourceNotReady(event, true)) return;
             startProcess(true);
         });
 
 
         btnRun.setOnAction(event -> {
-            String currentFolderPath = urlTextEntry.getText();
-            Stage primaryStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            String browsedPath = verifyOrBrowseFolder(primaryStage, currentFolderPath, false);
-
-            if (browsedPath == null) return;
-            urlTextEntry.setText(browsedPath);
+            if (FileSourceNotReady(event, false)) return;
             startProcess(true);
         });
 
@@ -184,27 +176,50 @@ public class Controller implements Initializable {
                 java.awt.Desktop.getDesktop().open(file);
             } catch (FileNotFoundException e) {
 //                messageBox("Export Error", e.getMessage());
-                exceptionDialog(Alert.AlertType.ERROR, "Export Error", "Could not export file !", file.getPath(), e);
+                exceptionDialog("Export Error", "Could not export file !", file.getPath(), e);
             } catch (IOException e) {
-                exceptionDialog(Alert.AlertType.ERROR, "Export Error", "Could not export file due to Input/Output Error." ,file.getPath(), e);
+                exceptionDialog("Export Error", "Could not export file due to Input/Output Error.", file.getPath(), e);
             }
         });
     }
 
-    private String verifyOrBrowseFolder(Stage primaryStage, String initDir, boolean forceChange) {
-        File folder = new File(initDir);
+    private boolean FileSourceNotReady(ActionEvent event, boolean forceChange) {
+        String currentFolderPath = urlTextEntry.getText();
+        Stage primaryStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+        String browsedPath;
+        File folder = new File(currentFolderPath);
 
         if (folder.exists() && folder.isDirectory() && !forceChange)
-            return folder.getAbsolutePath();
+            browsedPath = folder.getAbsolutePath();
         else {
             DirectoryChooser directoryChooser = new DirectoryChooser();
-            if( folder.exists()) {
+            if (folder.exists()) {
                 directoryChooser.setInitialDirectory(folder);
             }
-            File selectedDirectory = directoryChooser.showDialog(primaryStage);
-            return selectedDirectory != null ? selectedDirectory.getAbsolutePath() : null;
+            File fileSelected = directoryChooser.showDialog(primaryStage);
+            browsedPath = fileSelected != null ? fileSelected.getAbsolutePath() : null;
         }
+
+        if (browsedPath == null) return true;
+        urlTextEntry.setText(browsedPath);
+        return false;
     }
+
+//    private String verifyOrBrowseFolder(Stage primaryStage, String initDir, boolean forceChange) {
+//        File folder = new File(initDir);
+//
+//        if (folder.exists() && folder.isDirectory() && !forceChange)
+//            return folder.getAbsolutePath();
+//        else {
+//            DirectoryChooser directoryChooser = new DirectoryChooser();
+//            if (folder.exists()) {
+//                directoryChooser.setInitialDirectory(folder);
+//            }
+//            File selectedDirectory = directoryChooser.showDialog(primaryStage);
+//            return selectedDirectory != null ? selectedDirectory.getAbsolutePath() : null;
+//        }
+//    }
 
     private void startProcess(boolean start) {
         btnRun.setText(start ? "Stop" : "Start");
@@ -274,12 +289,7 @@ public class Controller implements Initializable {
                 return;
             }
 
-            String currentFolderPath = urlTextEntry.getText();
-
-            Stage primaryStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            String browsedPath = verifyOrBrowseFolder(primaryStage, currentFolderPath, false);
-            if (browsedPath == null) return;
-            urlTextEntry.setText(browsedPath);
+            if (FileSourceNotReady(event, false)) return;
 
             btnRun.setText("Stop");
             progress.setVisible(true);
@@ -294,7 +304,7 @@ public class Controller implements Initializable {
     }
 
     private MiniLinkDeviceConfigWrapper process(File file) throws IOException {
-        String ml_su_activerelease = "";
+        String ml_su_activeRelease = "";
         String ml_brg_nt_pcp_selection = "";
         String ml_brg_prio_m_type = "";
         String key_current_sdlr_profile = "";
@@ -302,6 +312,7 @@ public class Controller implements Initializable {
         String ml_brg_sdlr_profile = "";
         String ml_brg_qu_set_profile = "";
         String ml_su_release = "";
+        String ml_ip_address = "";
         String fileName = file.getName();
         String siteId = "";
 
@@ -340,17 +351,28 @@ public class Controller implements Initializable {
                 if (line.startsWith("!") || line.trim().isEmpty()) continue;
 
                 if (line.startsWith("su-activerelease")) {
-                    ml_su_activerelease = line.replace("su-activerelease ", "");
+                    ml_su_activeRelease = line.replace("su-activerelease ", "");
                     continue;
                 }
 
+                if (line.startsWith(" ip address ")) {
+                    try {
+                        Pattern regex = Pattern.compile(" ip address (?<ip>[0-9.]+)(/(?<CIDR>\\d+)| (?<mask>[0-9.]+))");
+                        Matcher regexMatcher = regex.matcher(line);
+                        if (regexMatcher.find()) {
+                            ml_ip_address = regexMatcher.group("ip");
+                        }
+                    } catch (PatternSyntaxException ignore) {
+                        //Syntax error in the regular expression.
+                    }
+                }
                 if (line.startsWith("su-release ")) {
-                    if (line.endsWith(ml_su_activerelease)) {
+                    if (line.endsWith(ml_su_activeRelease)) {
                         try {
-                            Pattern regex = Pattern.compile("\\d+\\.\\d+.{2,} " + ml_su_activerelease);
+                            Pattern regex = Pattern.compile("\\d+\\.\\d+.{2,} " + ml_su_activeRelease);
                             Matcher regexMatcher = regex.matcher(line);
                             if (regexMatcher.find()) {
-                                ml_su_release = regexMatcher.group().replace(" " + ml_su_activerelease, "");
+                                ml_su_release = regexMatcher.group().replace(" " + ml_su_activeRelease, "");
                                 if (ml_su_release.startsWith("1.7")) su_release = 1.7f;
                                 else if (ml_su_release.startsWith("1.5")) su_release = 1.5f;
                                 else if (ml_su_release.startsWith("1.3")) su_release = 1.3f;
@@ -417,7 +439,7 @@ public class Controller implements Initializable {
                         } catch (PatternSyntaxException ignore) {
                         }
                     } else if (line.startsWith("  tc-scheduler-type-and-weight ")) {
-                        if(!key_current_sdlr_profile.isEmpty() && ml_map_sdlr_profile.containsKey(key_current_sdlr_profile)){
+                        if (!key_current_sdlr_profile.isEmpty() && ml_map_sdlr_profile.containsKey(key_current_sdlr_profile)) {
                             ml_map_sdlr_profile.get(key_current_sdlr_profile).add(line.replace("  tc-scheduler-type-and-weight ", ""));
                         }
 //                        ml_list_tc_sdlr_typeN_weight.add(line.replace("  tc-scheduler-type-and-weight ", ""));
@@ -432,7 +454,7 @@ public class Controller implements Initializable {
                         } catch (PatternSyntaxException ignore) {
                         }
                     } else if (line.startsWith("   tc-queue ")) {
-                        if(!key_current_qu_set_profile.isEmpty() && ml_map_qu_set_profile.containsKey(key_current_qu_set_profile)){
+                        if (!key_current_qu_set_profile.isEmpty() && ml_map_qu_set_profile.containsKey(key_current_qu_set_profile)) {
                             ml_map_qu_set_profile.get(key_current_qu_set_profile).add(line.replace("   tc-queue ", ""));
                         }
 //                        ml_list_tc_qu.add(line.replace("   tc-queue ", ""));
@@ -467,9 +489,11 @@ public class Controller implements Initializable {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                     } else if (line.startsWith(" role")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                    } if (line.startsWith(" scheduler-profile ")) {
+                    }
+                    if (line.startsWith(" scheduler-profile ")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                    } if (line.startsWith(" queue-set-profile ")) {
+                    }
+                    if (line.startsWith(" queue-set-profile ")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                     } else if (line.startsWith("  no alarm-enable ethernet-down") || line.startsWith("  alarm-enable ethernet-down")) {
                         ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
@@ -495,12 +519,9 @@ public class Controller implements Initializable {
                         if (line.startsWith(" exit")) {
                             flag_int_eth = false;
                         } else if (line.startsWith(" usage bridge-port ")) { // !LAN-DCN 1/4/0 - Port 1
-
-                            ml_map_int_eth_port.get(currentIntEthKey).add(String.format("!%s %s - Port %s",
-                                    currentIntEthernetWanLanDCN.trim().toUpperCase(),
-                                    currentIntEthKey, line.replace(" usage bridge-port ", "")));
+                            ml_map_int_eth_port.get(currentIntEthKey).add(String.format("!%s %s - Port %s", currentIntEthernetWanLanDCN.trim().toUpperCase(), currentIntEthKey.replace(currentIntEthernetWanLanDCN, ""), line.replace(" usage bridge-port ", "")));
                         } else if (line.startsWith(" alias ")) {
-                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
+                            ml_map_int_eth_port.get(currentIntEthKey).add(line.trim().replace("alias ", "name "));
                         } else if (line.startsWith("  no shutdown") || line.startsWith("  shutdown")) {
                             ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                         } else if (line.startsWith("  no trapenable") || line.startsWith("  trapenable")) {
@@ -542,9 +563,11 @@ public class Controller implements Initializable {
                         if (!currentIntEthKey.isEmpty()) {
                             if (line.startsWith(" role")) {
                                 ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                            } if (line.startsWith(" scheduler-profile ")) {
+                            }
+                            if (line.startsWith(" scheduler-profile ")) {
                                 ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
-                            } if (line.startsWith(" queue-set-profile ")) {
+                            }
+                            if (line.startsWith(" queue-set-profile ")) {
                                 ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
                             } else if (line.startsWith(" trusted")) {
                                 ml_map_int_eth_port.get(currentIntEthKey).add(line.trim());
@@ -572,6 +595,7 @@ public class Controller implements Initializable {
         return new MiniLinkDeviceConfigWrapper(
                 fileName,
                 siteId,
+                ml_ip_address,
                 ml_su_release,
                 ml_brg_sdlr_profile,
                 ml_brg_qu_set_profile,
@@ -586,10 +610,32 @@ public class Controller implements Initializable {
         );
     }
 
+    public int convertNetmaskToCIDR(InetAddress netmask){
+
+        byte[] netmaskBytes = netmask.getAddress();
+        int cidr = 0;
+        boolean zero = false;
+        for(byte b : netmaskBytes){
+            int mask = 0x80;
+
+            for(int i = 0; i < 8; i++){
+                int result = b & mask;
+                if(result == 0){
+                    zero = true;
+                }else if(zero){
+                    throw new IllegalArgumentException("Invalid netmask.");
+                } else {
+                    cidr++;
+                }
+                mask >>>= 1;
+            }
+        }
+        return cidr;
+    }
 
     //https://code.makery.ch/blog/javafx-dialogs-official/
-    private void exceptionDialog(Alert.AlertType alertType,  String title, String headerText, String contentText, Exception ex) {
-        Alert alert = new Alert(alertType);
+    private void exceptionDialog(String title, String headerText, String contentText, Exception ex) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
         alert.setContentText(contentText);
